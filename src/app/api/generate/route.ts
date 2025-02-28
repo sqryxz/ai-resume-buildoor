@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import type { ResumeData } from '../../../components/ResumeForm';
 
 // Updated DeepSeek API endpoint
-const DEEPSEEK_API_URL = 'https://api.deepseek.com/chat/completions';
+const DEEPSEEK_API_URL = 'https://api.deepseek.com/v1/chat/completions';
 
 const SYSTEM_PROMPT = `You are an expert résumé writer with years of experience helping people land jobs at top companies.
 Your task is to enhance the provided résumé content while maintaining accuracy and authenticity.
@@ -107,6 +107,7 @@ export async function POST(request: Request) {
     console.log('DeepSeek API raw response:', responseText);
 
     if (!response.ok) {
+      console.error('DeepSeek API error response:', responseText);
       throw new Error(`DeepSeek API error: ${response.status} - ${responseText}`);
     }
 
@@ -116,7 +117,8 @@ export async function POST(request: Request) {
       result = JSON.parse(responseText);
     } catch (error) {
       console.error('Failed to parse API response as JSON:', error);
-      throw new Error(`Invalid JSON response from API: ${responseText.substring(0, 100)}...`);
+      console.error('Raw response:', responseText);
+      throw new Error('Invalid JSON response from DeepSeek API');
     }
 
     console.log('DeepSeek API parsed response:', JSON.stringify(result, null, 2));
