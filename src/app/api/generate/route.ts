@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { FormData } from '@/components/ResumeForm';
 
-const DEEPSEEK_API_URL = 'https://api.deepseek.com/v1/chat/completions';
+const DEEPSEEK_API_URL = 'https://api.deepseek.ai/v1/chat/completions';
 
 const SYSTEM_PROMPT = `You are an expert résumé writer with years of experience helping people land jobs at top companies.
 Your task is to enhance the provided résumé content while maintaining accuracy and authenticity.
