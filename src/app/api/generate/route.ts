@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import type { ResumeData } from '../../../components/ResumeForm';
 
 // DeepSeek API endpoint
-const DEEPSEEK_API_URL = 'https://api.deepseek.com/v1/chat/completions';
+const DEEPSEEK_API_URL = 'https://api.deepseek.com/chat/completions';
 
 const SYSTEM_PROMPT = `You are an expert résumé writer with years of experience helping people land jobs at top companies.
 Your task is to enhance the provided résumé content while maintaining accuracy and authenticity.
@@ -85,7 +85,7 @@ export async function POST(request: Request) {
           'Authorization': `Bearer ${process.env.DEEPSEEK_API_KEY}`,
         },
         body: JSON.stringify({
-          model: "deepseek-coder",
+          model: "deepseek-chat",
           messages: [
             {
               role: "system",
