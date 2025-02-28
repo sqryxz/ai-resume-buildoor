@@ -1,4 +1,7 @@
-import ResumeForm from '@/components/ResumeForm'
+'use client';
+
+import React from 'react';
+import ResumeForm from '../components/ResumeForm'
 
 const sampleData = {
   personalInfo: {
