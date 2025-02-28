@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import type { ResumeData } from '../../../components/ResumeForm';
 
 // Updated DeepSeek API endpoint
-const DEEPSEEK_API_URL = 'https://api.deepseek.com/v1/chat/completions';
+const DEEPSEEK_API_URL = 'https://api.deepseek.com/chat/completions';
 
 const SYSTEM_PROMPT = `You are an expert résumé writer with years of experience helping people land jobs at top companies.
 Your task is to enhance the provided résumé content while maintaining accuracy and authenticity.
@@ -13,10 +13,12 @@ For each section:
 4. Highlight relevant skills and accomplishments
 5. Remove fluff and focus on concrete results
 
-Keep the content truthful and professional. Do not invent or exaggerate achievements.`;
+Keep the content truthful and professional. Do not invent or exaggerate achievements.
+
+IMPORTANT: Your response must be valid JSON that matches the structure of the input data.`;
 
 const formatPrompt = (data: ResumeData) => {
-  return `Please enhance the following résumé sections maintaining the same structure but improving the content:
+  return `Please enhance the following résumé sections. Return your response as a JSON object that matches the exact structure of the input data:
 
 PERSONAL SUMMARY:
 ${data.personalInfo.summary}
@@ -51,7 +53,14 @@ ${activity.description}
 SKILLS:
 ${data.skills.filter(Boolean).join(', ')}
 
-Please provide the enhanced content in a JSON format matching the original structure, with each section improved for maximum impact.`;
+Your response must be a valid JSON object with the following structure:
+{
+  "personalInfo": { "summary": "enhanced summary" },
+  "experience": [{ "position": "...", "company": "...", "startDate": "...", "endDate": "...", "description": "..." }],
+  "education": [{ "school": "...", "degree": "...", "field": "...", "graduationDate": "...", "gpa": "..." }],
+  "extraCurriculars": [{ "role": "...", "organization": "...", "startDate": "...", "endDate": "...", "description": "..." }],
+  "skills": ["skill1", "skill2", ...]
+}`;
 };
 
 export async function POST(request: Request) {
@@ -73,6 +82,7 @@ export async function POST(request: Request) {
         'Accept': 'application/json',
       },
       body: JSON.stringify({
+        model: "deepseek-coder-33b",
         messages: [
           {
             role: "system",
@@ -83,10 +93,10 @@ export async function POST(request: Request) {
             content: formatPrompt(data)
           }
         ],
-        model: "deepseek-chat",
-        temperature: 0.7,
-        max_tokens: 2000,
-        stream: false
+        temperature: 0.3,
+        max_tokens: 4000,
+        stream: false,
+        response_format: { type: "json_object" }
       }),
     });
 
