@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 import type { ResumeData } from '../../../components/ResumeForm';
 
-// Trigger Vercel deployment - DeepSeek API Integration
-const DEEPSEEK_API_URL = 'https://api.deepseek.ai/v1/chat/completions';
+// Updated DeepSeek API endpoint
+const DEEPSEEK_API_URL = 'https://api.deepseek.com/v1/chat/completions';
 
 const SYSTEM_PROMPT = `You are an expert résumé writer with years of experience helping people land jobs at top companies.
 Your task is to enhance the provided résumé content while maintaining accuracy and authenticity.
@@ -70,9 +70,9 @@ export async function POST(request: Request) {
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${process.env.DEEPSEEK_API_KEY}`,
+        'Accept': 'application/json',
       },
       body: JSON.stringify({
-        model: "deepseek-chat",
         messages: [
           {
             role: "system",
@@ -83,8 +83,10 @@ export async function POST(request: Request) {
             content: formatPrompt(data)
           }
         ],
+        model: "deepseek-chat",
         temperature: 0.7,
         max_tokens: 2000,
+        stream: false
       }),
     });
 
@@ -92,11 +94,16 @@ export async function POST(request: Request) {
     if (!response.ok) {
       const errorText = await response.text();
       console.error('DeepSeek API error:', errorText);
-      throw new Error(`DeepSeek API error: ${response.statusText}`);
+      throw new Error(`DeepSeek API error: ${response.status} - ${errorText}`);
     }
 
     const result = await response.json();
     console.log('DeepSeek API response:', JSON.stringify(result, null, 2));
+    
+    if (!result.choices || !result.choices[0] || !result.choices[0].message) {
+      throw new Error('Invalid response format from DeepSeek API');
+    }
+
     const enhancedContent = result.choices[0].message.content;
     
     let parsedContent;
@@ -120,7 +127,11 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error('Error in resume generation:', error);
     return NextResponse.json(
-      { success: false, error: error instanceof Error ? error.message : 'Failed to generate resume' },
+      { 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Failed to generate resume',
+        details: error instanceof Error ? error.stack : undefined
+      },
       { status: 500 }
     );
   }
