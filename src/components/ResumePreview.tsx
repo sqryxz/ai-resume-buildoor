@@ -1,6 +1,6 @@
 'use client';
 
-import React, { FC } from 'react';
+import { FC } from 'react';
 import { ResumeData } from './ResumeForm';
 
 interface ResumePreviewProps {
