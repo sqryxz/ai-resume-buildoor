@@ -3,7 +3,7 @@ import type { ResumeData } from '../../../components/ResumeForm';
 
 // API Configuration
 const API_CONFIG = {
-  url: 'https://api.deepseek.com/chat/completions',
+  url: 'https://api.deepseek.com',
   model: 'deepseek-chat',
   timeout: 60000,
   maxTokens: 4000
