@@ -15,7 +15,7 @@ For each section:
 
 Keep the content truthful and professional. Do not invent or exaggerate achievements.
 
-IMPORTANT: Your response must be valid JSON that matches the structure of the input data.`;
+IMPORTANT: You must respond with ONLY a valid JSON object. Do not include any explanatory text, markdown formatting, or code blocks. The response should be a single JSON object that can be parsed directly.`;
 
 const formatPrompt = (data: ResumeData) => {
   return `Please enhance the following résumé sections. Return your response as a JSON object that matches the exact structure of the input data:
@@ -85,7 +85,7 @@ export async function POST(request: Request) {
           'Authorization': `Bearer ${process.env.DEEPSEEK_API_KEY}`,
         },
         body: JSON.stringify({
-          model: "deepseek-chat",
+          model: "deepseek-1.3b-chat",
           messages: [
             {
               role: "system",
@@ -100,23 +100,31 @@ export async function POST(request: Request) {
           max_tokens: 4000,
           top_p: 0.95,
           frequency_penalty: 0,
-          presence_penalty: 0
+          presence_penalty: 0,
+          stop: ["```"]
         }),
         signal: controller.signal,
       });
 
       clearTimeout(timeoutId);
 
-      console.log('DeepSeek API response status:', response.status);
-      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('DeepSeek API error response:', errorText);
+        
+        // Try to parse the error as JSON
+        try {
+          const errorJson = JSON.parse(errorText);
+          throw new Error(errorJson.error?.message || `DeepSeek API error: ${response.status}`);
+        } catch (e) {
+          // If we can't parse the error as JSON, just return the raw error
+          throw new Error(`DeepSeek API error: ${response.status} - ${errorText}`);
+        }
+      }
+
       // First try to get the response as text
       const responseText = await response.text();
       console.log('DeepSeek API raw response:', responseText);
-
-      if (!response.ok) {
-        console.error('DeepSeek API error response:', responseText);
-        throw new Error(`DeepSeek API error: ${response.status} - ${responseText}`);
-      }
 
       // Try to parse the response text as JSON
       let result;
@@ -125,7 +133,18 @@ export async function POST(request: Request) {
       } catch (error) {
         console.error('Failed to parse API response as JSON:', error);
         console.error('Raw response:', responseText);
-        throw new Error('Invalid JSON response from DeepSeek API');
+        
+        // If the response isn't JSON, try to extract JSON from the text
+        const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          try {
+            result = JSON.parse(jsonMatch[0]);
+          } catch (e) {
+            throw new Error('Could not extract valid JSON from response');
+          }
+        } else {
+          throw new Error('Invalid JSON response from DeepSeek API');
+        }
       }
 
       console.log('DeepSeek API parsed response:', JSON.stringify(result, null, 2));
@@ -138,18 +157,29 @@ export async function POST(request: Request) {
       
       let parsedContent;
       try {
-        // Find the JSON object in the response text
-        const jsonMatch = enhancedContent.match(/\{[\s\S]*\}/);
-        if (!jsonMatch) {
-          throw new Error('No JSON object found in response');
+        // Try to parse the content directly first
+        try {
+          parsedContent = JSON.parse(enhancedContent);
+        } catch (e) {
+          // If direct parsing fails, try to find and extract a JSON object
+          const jsonMatch = enhancedContent.match(/\{[\s\S]*\}/);
+          if (!jsonMatch) {
+            throw new Error('No JSON object found in response');
+          }
+          parsedContent = JSON.parse(jsonMatch[0]);
         }
-        parsedContent = JSON.parse(jsonMatch[0]);
+
+        // Validate the parsed content has the required structure
+        if (!parsedContent.personalInfo || !parsedContent.experience || !parsedContent.education) {
+          throw new Error('Response missing required fields');
+        }
       } catch (error) {
         console.error('Error parsing AI response content:', error);
         console.log('Raw AI response content:', enhancedContent);
         // If parsing fails, return the raw enhanced content
         return NextResponse.json({ 
-          success: true, 
+          success: false, 
+          error: 'Failed to parse AI response',
           content: enhancedContent,
           format: 'text'
         });
