@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 import type { ResumeData } from '../../../components/ResumeForm';
 
-// Updated DeepSeek API endpoint
-const DEEPSEEK_API_URL = 'https://api.deepseek.ai/v1/chat/completions';
+// OpenAI API endpoint
+const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
 
 const SYSTEM_PROMPT = `You are an expert résumé writer with years of experience helping people land jobs at top companies.
 Your task is to enhance the provided résumé content while maintaining accuracy and authenticity.
@@ -68,25 +68,24 @@ export async function POST(request: Request) {
     const data: ResumeData = await request.json();
     console.log('Received request with data:', JSON.stringify(data, null, 2));
 
-    if (!process.env.DEEPSEEK_API_KEY) {
-      console.error('DEEPSEEK_API_KEY is not set');
+    if (!process.env.OPENAI_API_KEY) {
+      console.error('OPENAI_API_KEY is not set');
       throw new Error('API key not configured');
     }
 
-    console.log('Making request to DeepSeek API...');
+    console.log('Making request to OpenAI API...');
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
 
     try {
-      const response = await fetch(DEEPSEEK_API_URL, {
+      const response = await fetch(OPENAI_API_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${process.env.DEEPSEEK_API_KEY}`,
-          'Accept': 'application/json',
+          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
         },
         body: JSON.stringify({
-          model: "deepseek-coder-33b-instruct",
+          model: "gpt-3.5-turbo",
           messages: [
             {
               role: "system",
@@ -99,7 +98,6 @@ export async function POST(request: Request) {
           ],
           temperature: 0.3,
           max_tokens: 4000,
-          stream: false,
           response_format: { type: "json_object" }
         }),
         signal: controller.signal,
@@ -107,15 +105,15 @@ export async function POST(request: Request) {
 
       clearTimeout(timeoutId);
 
-      console.log('DeepSeek API response status:', response.status);
+      console.log('OpenAI API response status:', response.status);
       
       // First try to get the response as text
       const responseText = await response.text();
-      console.log('DeepSeek API raw response:', responseText);
+      console.log('OpenAI API raw response:', responseText);
 
       if (!response.ok) {
-        console.error('DeepSeek API error response:', responseText);
-        throw new Error(`DeepSeek API error: ${response.status} - ${responseText}`);
+        console.error('OpenAI API error response:', responseText);
+        throw new Error(`OpenAI API error: ${response.status} - ${responseText}`);
       }
 
       // Try to parse the response text as JSON
@@ -125,13 +123,13 @@ export async function POST(request: Request) {
       } catch (error) {
         console.error('Failed to parse API response as JSON:', error);
         console.error('Raw response:', responseText);
-        throw new Error('Invalid JSON response from DeepSeek API');
+        throw new Error('Invalid JSON response from OpenAI API');
       }
 
-      console.log('DeepSeek API parsed response:', JSON.stringify(result, null, 2));
+      console.log('OpenAI API parsed response:', JSON.stringify(result, null, 2));
       
       if (!result.choices || !result.choices[0] || !result.choices[0].message) {
-        throw new Error('Invalid response format from DeepSeek API');
+        throw new Error('Invalid response format from OpenAI API');
       }
 
       const enhancedContent = result.choices[0].message.content;
