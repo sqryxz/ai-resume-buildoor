@@ -91,14 +91,25 @@ export async function POST(request: Request) {
     });
 
     console.log('DeepSeek API response status:', response.status);
+    
+    // First try to get the response as text
+    const responseText = await response.text();
+    console.log('DeepSeek API raw response:', responseText);
+
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error('DeepSeek API error:', errorText);
-      throw new Error(`DeepSeek API error: ${response.status} - ${errorText}`);
+      throw new Error(`DeepSeek API error: ${response.status} - ${responseText}`);
     }
 
-    const result = await response.json();
-    console.log('DeepSeek API response:', JSON.stringify(result, null, 2));
+    // Try to parse the response text as JSON
+    let result;
+    try {
+      result = JSON.parse(responseText);
+    } catch (error) {
+      console.error('Failed to parse API response as JSON:', error);
+      throw new Error(`Invalid JSON response from API: ${responseText.substring(0, 100)}...`);
+    }
+
+    console.log('DeepSeek API parsed response:', JSON.stringify(result, null, 2));
     
     if (!result.choices || !result.choices[0] || !result.choices[0].message) {
       throw new Error('Invalid response format from DeepSeek API');
@@ -110,7 +121,8 @@ export async function POST(request: Request) {
     try {
       parsedContent = JSON.parse(enhancedContent);
     } catch (error) {
-      console.error('Error parsing AI response:', error);
+      console.error('Error parsing AI response content:', error);
+      console.log('Raw AI response content:', enhancedContent);
       // If parsing fails, return the raw enhanced content
       return NextResponse.json({ 
         success: true, 
@@ -130,7 +142,8 @@ export async function POST(request: Request) {
       { 
         success: false, 
         error: error instanceof Error ? error.message : 'Failed to generate resume',
-        details: error instanceof Error ? error.stack : undefined
+        details: error instanceof Error ? error.stack : undefined,
+        timestamp: new Date().toISOString()
       },
       { status: 500 }
     );
