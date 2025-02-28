@@ -82,7 +82,7 @@ export async function POST(request: Request) {
         'Accept': 'application/json',
       },
       body: JSON.stringify({
-        model: "deepseek-coder-33b",
+        model: "deepseek-chat",
         messages: [
           {
             role: "system",
