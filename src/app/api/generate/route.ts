@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 import type { ResumeData } from '../../../components/ResumeForm';
 
-// OpenAI API endpoint
-const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
+// Google AI API endpoint
+const GOOGLE_AI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent';
 
 const SYSTEM_PROMPT = `You are an expert résumé writer with years of experience helping people land jobs at top companies.
 Your task is to enhance the provided résumé content while maintaining accuracy and authenticity.
@@ -68,52 +68,47 @@ export async function POST(request: Request) {
     const data: ResumeData = await request.json();
     console.log('Received request with data:', JSON.stringify(data, null, 2));
 
-    if (!process.env.OPENAI_API_KEY) {
-      console.error('OPENAI_API_KEY is not set');
+    if (!process.env.GOOGLE_AI_API_KEY) {
+      console.error('GOOGLE_AI_API_KEY is not set');
       throw new Error('API key not configured');
     }
 
-    console.log('Making request to OpenAI API...');
+    console.log('Making request to Google AI API...');
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
 
     try {
-      const response = await fetch(OPENAI_API_URL, {
+      const response = await fetch(`${GOOGLE_AI_API_URL}?key=${process.env.GOOGLE_AI_API_KEY}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
         },
         body: JSON.stringify({
-          model: "gpt-3.5-turbo",
-          messages: [
-            {
-              role: "system",
-              content: SYSTEM_PROMPT
-            },
+          contents: [
             {
               role: "user",
-              content: formatPrompt(data)
+              parts: [{ text: SYSTEM_PROMPT + "\n\n" + formatPrompt(data) }]
             }
           ],
-          temperature: 0.3,
-          max_tokens: 4000,
-          response_format: { type: "json_object" }
+          generationConfig: {
+            temperature: 0.3,
+            maxOutputTokens: 4000,
+          }
         }),
         signal: controller.signal,
       });
 
       clearTimeout(timeoutId);
 
-      console.log('OpenAI API response status:', response.status);
+      console.log('Google AI API response status:', response.status);
       
       // First try to get the response as text
       const responseText = await response.text();
-      console.log('OpenAI API raw response:', responseText);
+      console.log('Google AI API raw response:', responseText);
 
       if (!response.ok) {
-        console.error('OpenAI API error response:', responseText);
-        throw new Error(`OpenAI API error: ${response.status} - ${responseText}`);
+        console.error('Google AI API error response:', responseText);
+        throw new Error(`Google AI API error: ${response.status} - ${responseText}`);
       }
 
       // Try to parse the response text as JSON
@@ -123,20 +118,25 @@ export async function POST(request: Request) {
       } catch (error) {
         console.error('Failed to parse API response as JSON:', error);
         console.error('Raw response:', responseText);
-        throw new Error('Invalid JSON response from OpenAI API');
+        throw new Error('Invalid JSON response from Google AI API');
       }
 
-      console.log('OpenAI API parsed response:', JSON.stringify(result, null, 2));
+      console.log('Google AI API parsed response:', JSON.stringify(result, null, 2));
       
-      if (!result.choices || !result.choices[0] || !result.choices[0].message) {
-        throw new Error('Invalid response format from OpenAI API');
+      if (!result.candidates || !result.candidates[0] || !result.candidates[0].content) {
+        throw new Error('Invalid response format from Google AI API');
       }
 
-      const enhancedContent = result.choices[0].message.content;
+      const enhancedContent = result.candidates[0].content.parts[0].text;
       
       let parsedContent;
       try {
-        parsedContent = JSON.parse(enhancedContent);
+        // Find the JSON object in the response text
+        const jsonMatch = enhancedContent.match(/\{[\s\S]*\}/);
+        if (!jsonMatch) {
+          throw new Error('No JSON object found in response');
+        }
+        parsedContent = JSON.parse(jsonMatch[0]);
       } catch (error) {
         console.error('Error parsing AI response content:', error);
         console.log('Raw AI response content:', enhancedContent);
