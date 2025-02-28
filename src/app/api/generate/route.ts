@@ -3,7 +3,8 @@ import type { ResumeData } from '../../../components/ResumeForm';
 
 // API Configuration
 const API_CONFIG = {
-  url: 'https://api.deepseek.com',
+  baseUrl: 'https://api.deepseek.com',
+  endpoint: '/chat/completions',
   model: 'deepseek-chat',
   timeout: 60000,
   maxTokens: 4000
@@ -64,7 +65,7 @@ export async function POST(request: Request) {
     try {
       // 4. Make API request
       console.log('🚀 Sending request to DeepSeek API...');
-      const response = await fetch(API_CONFIG.url, {
+      const response = await fetch(`${API_CONFIG.baseUrl}${API_CONFIG.endpoint}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -76,9 +77,9 @@ export async function POST(request: Request) {
             { role: "system", content: SYSTEM_PROMPT },
             { role: "user", content: formatPrompt(data) }
           ],
-          temperature: 0.3,
+          temperature: 0.7,
           max_tokens: API_CONFIG.maxTokens,
-          top_p: 0.95
+          stream: false
         }),
         signal: controller.signal,
       });
