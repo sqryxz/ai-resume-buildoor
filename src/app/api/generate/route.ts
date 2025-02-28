@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { FormData } from '@/components/ResumeForm';
 
+// Trigger Vercel deployment - DeepSeek API Integration
 const DEEPSEEK_API_URL = 'https://api.deepseek.ai/v1/chat/completions';
 
 const SYSTEM_PROMPT = `You are an expert résumé writer with years of experience helping people land jobs at top companies.
