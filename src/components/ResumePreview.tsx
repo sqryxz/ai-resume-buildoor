@@ -1,10 +1,10 @@
 'use client';
 
-import { FC } from 'react';
-import { FormData } from './ResumeForm';
+import React, { FC } from 'react';
+import { ResumeData } from './ResumeForm';
 
 interface ResumePreviewProps {
-  data: FormData;
+  data: ResumeData;
 }
 
 const ResumePreview: FC<ResumePreviewProps> = ({ data }) => {
