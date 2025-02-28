@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 
-interface PersonalInfo {
+export interface PersonalInfo {
   name: string;
   email: string;
   phone: string;
@@ -10,7 +10,7 @@ interface PersonalInfo {
   summary: string;
 }
 
-interface Experience {
+export interface Experience {
   company: string;
   position: string;
   startDate: string;
@@ -18,7 +18,7 @@ interface Experience {
   description: string;
 }
 
-interface Education {
+export interface Education {
   school: string;
   degree: string;
   field: string;
@@ -26,7 +26,7 @@ interface Education {
   gpa: string;
 }
 
-interface ExtraCurricular {
+export interface ExtraCurricular {
   organization: string;
   role: string;
   startDate: string;
@@ -34,7 +34,7 @@ interface ExtraCurricular {
   description: string;
 }
 
-interface ResumeData {
+export interface ResumeData {
   personalInfo: PersonalInfo;
   experience: Experience[];
   education: Education[];

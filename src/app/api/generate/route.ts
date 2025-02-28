@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { FormData } from '@/components/ResumeForm';
+import type { ResumeData } from '../../../components/ResumeForm';
 
 // Trigger Vercel deployment - DeepSeek API Integration
 const DEEPSEEK_API_URL = 'https://api.deepseek.ai/v1/chat/completions';
@@ -15,7 +15,7 @@ For each section:
 
 Keep the content truthful and professional. Do not invent or exaggerate achievements.`;
 
-const formatPrompt = (data: FormData) => {
+const formatPrompt = (data: ResumeData) => {
   return `Please enhance the following résumé sections maintaining the same structure but improving the content:
 
 PERSONAL SUMMARY:
@@ -56,7 +56,7 @@ Please provide the enhanced content in a JSON format matching the original struc
 
 export async function POST(request: Request) {
   try {
-    const data: FormData = await request.json();
+    const data: ResumeData = await request.json();
     
     const response = await fetch(DEEPSEEK_API_URL, {
       method: 'POST',
