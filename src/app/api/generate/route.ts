@@ -57,7 +57,14 @@ Please provide the enhanced content in a JSON format matching the original struc
 export async function POST(request: Request) {
   try {
     const data: ResumeData = await request.json();
-    
+    console.log('Received request with data:', JSON.stringify(data, null, 2));
+
+    if (!process.env.DEEPSEEK_API_KEY) {
+      console.error('DEEPSEEK_API_KEY is not set');
+      throw new Error('API key not configured');
+    }
+
+    console.log('Making request to DeepSeek API...');
     const response = await fetch(DEEPSEEK_API_URL, {
       method: 'POST',
       headers: {
@@ -81,11 +88,15 @@ export async function POST(request: Request) {
       }),
     });
 
+    console.log('DeepSeek API response status:', response.status);
     if (!response.ok) {
+      const errorText = await response.text();
+      console.error('DeepSeek API error:', errorText);
       throw new Error(`DeepSeek API error: ${response.statusText}`);
     }
 
     const result = await response.json();
+    console.log('DeepSeek API response:', JSON.stringify(result, null, 2));
     const enhancedContent = result.choices[0].message.content;
     
     let parsedContent;
@@ -109,7 +120,7 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error('Error in resume generation:', error);
     return NextResponse.json(
-      { success: false, error: 'Failed to generate resume' },
+      { success: false, error: error instanceof Error ? error.message : 'Failed to generate resume' },
       { status: 500 }
     );
   }
