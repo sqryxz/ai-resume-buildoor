@@ -83,7 +83,7 @@ export default function ResumeForm({ sampleData }: ResumeFormProps) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${process.env.DEEPSEEK_API_KEY}`,
+          'Authorization': `Bearer sk-27fe0c5d9a524c3e994ef93955a5d5a0`,
         },
         body: JSON.stringify(formData),
       });
