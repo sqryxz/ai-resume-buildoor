@@ -77,8 +77,9 @@ export default function ResumeForm({ sampleData }: ResumeFormProps) {
   const enhanceWithAI = async () => {
     setIsEnhancing(true);
     setError(null);
+    console.log('DEEPSEEK_API_KEY', process.env.DEEPSEEK_API_KEY)
     try {
-      const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+      const response = await fetch('https://api.deepseek.com/chat/completions', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
