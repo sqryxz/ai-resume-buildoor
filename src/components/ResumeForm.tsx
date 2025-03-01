@@ -86,17 +86,26 @@ export default function ResumeForm({ sampleData }: ResumeFormProps) {
         body: JSON.stringify(formData),
       });
 
-      const result = await response.json();
-      
-      if (!result.success) {
-        throw new Error(result.error || 'Failed to enhance resume');
+      console.log('response.ok', response.ok)
+      console.log('response.body', response.body)
+      if (response.ok) {
+        const result = await response.json();
+
+        if (!result.success) {
+            throw new Error(result.error || 'Failed to enhance resume');
+          }
+    
+          console.log(result);
+          if (result.format === 'json') {
+            setFormData(result.content);
+          } else {
+            setError('Received unstructured content. Please try again.');
+          }
+
+        return;
       }
 
-      if (result.format === 'json') {
-        setFormData(result.content);
-      } else {
-        setError('Received unstructured content. Please try again.');
-      }
+      console.log('response not ok');
     } catch (error) {
       setError(error instanceof Error ? error.message : 'An error occurred');
     } finally {
